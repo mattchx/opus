@@ -17,11 +17,16 @@
 graph TD
     A[Vite/React Frontend] -->|API Calls| B[Node.js/Express API]
     B -->|CRUD Operations| C[Turso Database]
-    A -->|Auth| D[NextAuth.js]
+    A -->|Auth Requests| D[NextAuth.js]
+    D -->|Verify Sessions| B
     B -->|Session Management| D
     A -.->|Deploy| E[Vercel]
     B -.->|Deploy| F[Railway]
     C -.->|Host| G[Turso Cloud]
+    
+    %% Add user flow
+    U[User] -->|Interacts with| A
+    U -->|Authenticates via| D
 ```
 
 ## Key Components
@@ -87,3 +92,89 @@ graph TD
 - **Database**: Turso Cloud
   - Production instance
   - Regular backups
+
+## API Documentation
+
+### Authentication Endpoints
+- `POST /api/auth/signin` - Sign in with credentials
+- `POST /api/auth/signout` - Sign out user
+- `GET /api/auth/session` - Get current session
+
+### Content Endpoints
+- `GET /api/content` - List all content
+- `GET /api/content/:id` - Get specific content
+- `POST /api/content` - Create new content
+- `PUT /api/content/:id` - Update content
+- `DELETE /api/content/:id` - Delete content
+
+### Forum Endpoints
+- `GET /api/forum/topics` - List all topics
+- `POST /api/forum/topics` - Create new topic
+- `GET /api/forum/topics/:id/replies` - Get replies for topic
+- `POST /api/forum/topics/:id/replies` - Add reply to topic
+
+## Database Schema
+
+### Users Table
+```sql
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  email TEXT UNIQUE,
+  password_hash TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Content Table
+```sql
+CREATE TABLE content (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  body TEXT,
+  user_id TEXT REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Forum Topics Table
+```sql
+CREATE TABLE forum_topics (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  body TEXT,
+  user_id TEXT REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Forum Replies Table
+```sql
+CREATE TABLE forum_replies (
+  id TEXT PRIMARY KEY,
+  body TEXT NOT NULL,
+  topic_id TEXT REFERENCES forum_topics(id),
+  user_id TEXT REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Environment Setup
+
+### Required Environment Variables
+```
+# Frontend (.env)
+VITE_API_URL=http://localhost:3000
+VITE_AUTH_URL=http://localhost:3000/api/auth
+
+# Backend (.env)
+PORT=3000
+DATABASE_URL=libsql://...
+JWT_SECRET=your-secret-here
+NEXTAUTH_SECRET=your-nextauth-secret
+NEXTAUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
